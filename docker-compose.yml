@@ -1,0 +1,140 @@
+services:
+  stock-check-service:
+    build:
+      context: ./StockCheck
+      dockerfile: Dockerfile
+    container_name: check-stocklevel
+    ports:
+      - "3007:3000"
+    networks:
+      - project_app-network
+
+  delivery-service:
+    build:
+      context: ./Delivery
+      dockerfile: Dockerfile
+    container_name: delivery-service
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  order-service:
+    build:
+      context: ./Order
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "3002:3000"
+    depends_on:
+      - db
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  sale-service:
+    build:
+      context: ./Sale
+      dockerfile: Dockerfile
+    container_name: sale-service
+    ports:
+      - "3003:3000"
+    depends_on:
+      - db
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  stockmonitor-service:
+    build:
+      context: ./StockMonitor
+      dockerfile: Dockerfile
+    container_name: stockmonitor-service
+    ports:
+      - "3004:3000"
+    depends_on:
+      - db
+      - mqtt
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  stockupdate-service:
+    build:
+      context: ./StockUpdate
+      dockerfile: Dockerfile
+    container_name: stockupdate-service
+    ports:
+      - "3005:3000"
+    depends_on:
+      - db
+      - mqtt
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  supplier-service:
+    build:
+      context: ./Supplier
+      dockerfile: Dockerfile
+    container_name: supplier-service
+    ports:
+      - "3006:3000"
+    depends_on:
+      - db
+    networks:
+      - project_app-network
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/stock_delivery_system
+
+  db:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - /Users/zamyn17/mongod.conf:/etc/mongo/mongod.conf
+      - /Users/zamyn17/mongod_logs:/var/log/mongodb
+    command: mongod --config /etc/mongo/mongod.conf
+
+    networks:
+      - project_app-network
+
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt
+    ports:
+      - "1884:1883"
+    volumes:
+      - /opt/homebrew/Cellar/mosquitto/2.0.18/etc/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - project_app-network
+
+  node-red:
+    image: nodered/node-red
+    container_name: node-red
+    ports:
+      - "1880:1880"
+    volumes:
+      - node-red-data:/data
+    networks:
+      - project_app-network
+
+networks:
+  project_app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
+  node-red-data:
+    driver: local
